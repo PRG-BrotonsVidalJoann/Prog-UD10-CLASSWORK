@@ -1,16 +1,571 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestor Tareas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusTask | Gestor de Productividad</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #7B61FF;
+            --primary-dark: #5A43E0;
+            --primary-light: #E9E6FF;
+            --secondary: #FF6B8B;
+            --accent: #4D8AFF;
+            --light: #F9FAFF;
+            --dark: #1A1D2B;
+            --gray: #8E92BC;
+            --success: #4CCD99;
+            --warning: #FFC542;
+            --danger: #FF5C5C;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --card-shadow: 0 25px 50px -12px rgba(123, 97, 255, 0.25);
+            --neumorph-shadow: 8px 8px 16px #D1D9E6, -8px -8px 16px #FFFFFF;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #F6F7FF 0%, #EFF0FA 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: var(--dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .app-container {
+            position: relative;
+            width: 100%;
+            max-width: 720px;
+            perspective: 1000px;
+        }
+        
+        .floating-dots {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .dot {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--primary-light);
+            opacity: 0.6;
+            filter: blur(10px);
+        }
+        
+        .ultra-card {
+            width: 100%;
+            background: var(--glass-bg);
+            border-radius: 28px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(20px);
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .ultra-card:hover {
+            transform: translateY(-8px) rotateX(2deg);
+            box-shadow: 0 30px 60px -10px rgba(123, 97, 255, 0.3);
+        }
+        
+        .app-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .app-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            z-index: 1;
+        }
+        
+        .app-header h1 {
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        .app-header p {
+            font-weight: 300;
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+        
+        .app-icon {
+            width: 56px;
+            height: 56px;
+            background: white;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .app-icon i {
+            font-size: 1.75rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .form-container {
+            padding: 2.5rem;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.75rem;
+            margin-bottom: 1.75rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.75rem;
+            position: relative;
+        }
+        
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.95rem;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .form-group label .icon {
+            margin-right: 0.5rem;
+            color: var(--primary);
+            width: 20px;
+            text-align: center;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 1.1rem 1.5rem;
+            border: none;
+            border-radius: 14px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            background: rgba(255, 255, 255, 0.7);
+            box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.05), inset -2px -2px 4px rgba(255, 255, 255, 0.8);
+            color: var(--dark);
+        }
+        
+        .form-control:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(123, 97, 255, 0.2), inset 2px 2px 4px rgba(0, 0, 0, 0.05), inset -2px -2px 4px rgba(255, 255, 255, 0.8);
+            background: white;
+        }
+        
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238E92BC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1.5rem center;
+            background-size: 1em;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            position: relative;
+            padding-left: 35px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .custom-checkbox {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--gray);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .custom-checkbox::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            font-size: 0.8rem;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        input[type="checkbox"]:checked ~ .custom-checkbox {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        input[type="checkbox"]:checked ~ .custom-checkbox::after {
+            opacity: 1;
+        }
+        
+        .checkbox-text {
+            color: var(--dark);
+            font-weight: 500;
+        }
+        
+        .btn-submit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 1.4rem 2.5rem;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            width: 100%;
+            letter-spacing: 0.5px;
+            margin-top: 1.5rem;
+            box-shadow: 0 15px 30px -10px rgba(123, 97, 255, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 40px -10px rgba(123, 97, 255, 0.5);
+        }
+        
+        .btn-submit:hover::before {
+            left: 100%;
+        }
+        
+        .btn-submit:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn-submit i {
+            font-size: 1.1rem;
+        }
+        
+        .datetime-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.75rem;
+        }
+        
+        .priority-indicator {
+            position: absolute;
+            right: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px rgba(255, 92, 92, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .priority-indicator.alta {
+            background-color: var(--danger);
+            box-shadow: 0 0 0 3px rgba(255, 92, 92, 0.2);
+        }
+        
+        .priority-indicator.media {
+            background-color: var(--warning);
+            box-shadow: 0 0 0 3px rgba(255, 197, 66, 0.2);
+        }
+        
+        .priority-indicator.baja {
+            background-color: var(--success);
+            box-shadow: 0 0 0 3px rgba(76, 205, 153, 0.2);
+        }
+        
+        .floating-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            background: var(--primary-light);
+            border-radius: 50%;
+            opacity: 0.4;
+            filter: blur(1px);
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+            
+            .datetime-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-container {
+                padding: 1.75rem;
+            }
+            
+            .app-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+                padding: 1.5rem;
+            }
+            
+            .app-icon {
+                width: 48px;
+                height: 48px;
+            }
+        }
+        
+        /* Animaciones */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .btn-submit i {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .app-icon {
+            animation: pulse 4s ease-in-out infinite;
+        }
+    </style>
 </head>
 <body>
-<h1>Añadir Nueva Tarea</h1>
-<form action="/tarea-add" method="post">
-    <label>Codigo: <input name="code" type="number" required></label><br>
-    <label>Nombre: <input name="user" type="text" required></label><br>
-    <label>Descripción: <input name="description" type="text" required></label><br>
-    <input type="submit" value="añadir" required>
-</form>
+    <div class="app-container">
+        <div class="floating-dots" id="floating-dots"></div>
+        <div class="floating-particles" id="floating-particles"></div>
+        
+        <div class="ultra-card">
+            <div class="app-header">
+                <div class="header-content">
+                    <h1>Crear Nueva Tarea</h1>
+                    <p>Organiza tus actividades con eficiencia</p>
+                </div>
+                <div class="app-icon">
+                    <i class="fas fa-pen-fancy"></i>
+                </div>
+            </div>
+            
+            <div class="form-container">
+                <form action="/tarea-add" method="post">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label><i class="fas fa-hashtag icon"></i>Código</label>
+                            <input type="number" class="form-control" id="code" name="code" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-user icon"></i>Asignado a</label>
+                            <input type="text" class="form-control" id="user" name="user" required>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label><i class="fas fa-align-left icon"></i>Descripción</label>
+                            <input type="text" class="form-control" id="description" name="description" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-flag icon"></i>Prioridad</label>
+                            <select class="form-control" id="prioridad" name="prioridad" required>
+                                <option value="Alta">Alta</option>
+                                <option value="Media" selected>Media</option>
+                                <option value="Baja">Baja</option>
+                            </select>
+                            <span class="priority-indicator media" id="priority-indicator"></span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-check-circle icon"></i>Estado</label>
+                            <div class="checkbox-container">
+                                <input type="checkbox" id="realizada" name="realizada">
+                                <span class="custom-checkbox"></span>
+                                <span class="checkbox-text">Tarea completada</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="datetime-group">
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-day icon"></i>Fecha Límite</label>
+                            <input type="date" class="form-control" id="fechaVenc" name="fechaVenc" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-clock icon"></i>Hora Límite</label>
+                            <input type="time" class="form-control" id="horaVenc" name="horaVenc" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-plus-circle"></i>
+                        Crear Tarea Premium
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cambiar el indicador de prioridad según la selección
+        const prioritySelect = document.getElementById('prioridad');
+        const priorityIndicator = document.getElementById('priority-indicator');
+        
+        prioritySelect.addEventListener('change', function() {
+            const value = this.value.toLowerCase();
+            priorityIndicator.className = 'priority-indicator ' + value;
+        });
+        
+        // Inicializar con el valor por defecto
+        prioritySelect.dispatchEvent(new Event('change'));
+        
+        // Crear dots flotantes
+        const floatingDots = document.getElementById('floating-dots');
+        for (let i = 0; i < 15; i++) {
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            
+            // Posición y tamaño aleatorios
+            const size = Math.random() * 100 + 50;
+            const posX = Math.random() * 100;
+            const posY = Math.random() * 100;
+            
+            dot.style.width = `${size}px`;
+            dot.style.height = `${size}px`;
+            dot.style.left = `${posX}%`;
+            dot.style.top = `${posY}%`;
+            
+            // Animación
+            dot.style.animation = `move${i % 2 === 0 ? 'Left' : 'Right'} ${Math.random() * 30 + 30}s linear infinite`;
+            
+            floatingDots.appendChild(dot);
+        }
+        
+        // Crear partículas flotantes
+        const floatingParticles = document.getElementById('floating-particles');
+        for (let i = 0; i < 30; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            
+            // Posición y tamaño aleatorios
+            const size = Math.random() * 8 + 2;
+            const posX = Math.random() * 100;
+            const posY = Math.random() * 100;
+            const opacity = Math.random() * 0.3 + 0.1;
+            const delay = Math.random() * 5;
+            
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${posX}%`;
+            particle.style.top = `${posY}%`;
+            particle.style.opacity = opacity;
+            particle.style.animationDelay = `${delay}s`;
+            
+            // Animación
+            particle.style.animation = `float ${Math.random() * 20 + 10}s ease-in-out infinite`;
+            
+            floatingParticles.appendChild(particle);
+        }
+        
+        // Efecto de inclinación 3D al mover el mouse
+        const card = document.querySelector('.ultra-card');
+        document.addEventListener('mousemove', (e) => {
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+            card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+        
+        // Resetear cuando el mouse sale
+        document.addEventListener('mouseleave', () => {
+            card.style.transform = 'rotateY(0deg) rotateX(0deg)';
+        });
+    </script>
 </body>
 </html>

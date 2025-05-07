@@ -1,10 +1,13 @@
 package es.progcipfpbatoi.todolistspring.model.repositories;
 
 import es.progcipfpbatoi.todolistspring.exceptions.NotFoundException;
+import es.progcipfpbatoi.todolistspring.model.entities.Prioridad;
 import es.progcipfpbatoi.todolistspring.model.entities.Tarea;
 
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 
 @Repository
@@ -14,6 +17,7 @@ public class TareaRepository {
 
     public TareaRepository() {
         this.tareas = new ArrayList<>();
+        this.tareas.add(new Tarea(1, "Joan", "Posar la taula", Prioridad.ALTA, false,LocalDate.now(), LocalTime.now() ));
     }
 
     /**
@@ -31,7 +35,13 @@ public class TareaRepository {
      * @param codTarea
      */
     public Tarea get(int codTarea) throws NotFoundException {
-        throw new NotFoundException("La tarea con codigo xxxx no existe");
+    	
+    	for (Tarea tarea : tareas) {
+			if (tarea.getCodigo() == codTarea) {
+				return tarea;
+			}
+		}
+        throw new NotFoundException("La tarea con codigo "+ codTarea + " no existe");
     }
 
     /**
